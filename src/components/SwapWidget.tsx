@@ -205,10 +205,15 @@ export const SwapWidget = () => {
           {/* Footer */}
           <div className="mt-6 space-y-3">
             <div className="flex justify-between items-center text-sm">
-              <span className="text-swap-text-muted">By OKX</span>
+              <span className="text-swap-text-muted">
+                By {PROVIDERS.find(p => p.value === selectedProvider)?.label}
+              </span>
               <div className="flex items-center gap-2">
                 <span className="text-swap-text-muted">Or try</span>
-                <span className="text-swap-accent">🦄 Uniswap V2</span>
+                <span className="text-swap-accent">
+                  {PROVIDERS.find(p => p.value !== selectedProvider)?.icon}{' '}
+                  {PROVIDERS.find(p => p.value !== selectedProvider)?.label}
+                </span>
               </div>
             </div>
             <div className="flex justify-between items-center text-sm">
