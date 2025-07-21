@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowUpDown, Settings, RefreshCw } from 'lucide-react';
+import { useAccount, useConnect, useDisconnect } from 'wagmi';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { TokenSelector } from './TokenSelector';
@@ -21,14 +22,40 @@ const MOCK_TOKENS: Token[] = [
   { symbol: 'USDC', name: 'USD Coin', icon: '⊙', balance: '750.80' },
 ];
 
+// Mock exchange rates (in practice, this would come from an API)
+const EXCHANGE_RATES: Record<string, Record<string, number>> = {
+  ETH: { DEXT: 2450.32, USDT: 2500, USDC: 2500 },
+  DEXT: { ETH: 0.000408, USDT: 1.02, USDC: 1.02 },
+  USDT: { ETH: 0.0004, DEXT: 0.98, USDC: 1.0 },
+  USDC: { ETH: 0.0004, DEXT: 0.98, USDT: 1.0 },
+};
+
 export const SwapWidget = () => {
   const [fromToken, setFromToken] = useState<Token>(MOCK_TOKENS[0]);
   const [toToken, setToToken] = useState<Token>(MOCK_TOKENS[1]);
   const [fromAmount, setFromAmount] = useState('1');
   const [toAmount, setToAmount] = useState('0.0');
-  const [isConnected, setIsConnected] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const { toast } = useToast();
+  
+  // Wagmi hooks
+  const { address, isConnected } = useAccount();
+  const { connect, connectors } = useConnect();
+  const { disconnect } = useDisconnect();
+
+  // Calculate exchange rate and update amounts
+  const calculateToAmount = (from: string, fromSym: string, toSym: string) => {
+    if (!from || from === '0' || fromSym === toSym) return '0.0';
+    const rate = EXCHANGE_RATES[fromSym]?.[toSym] || 1;
+    const result = (parseFloat(from) * rate).toFixed(6);
+    return parseFloat(result).toString();
+  };
+
+  // Update toAmount when fromAmount or tokens change
+  useEffect(() => {
+    const newToAmount = calculateToAmount(fromAmount, fromToken.symbol, toToken.symbol);
+    setToAmount(newToAmount);
+  }, [fromAmount, fromToken.symbol, toToken.symbol]);
 
   const handleSwapTokens = () => {
     const tempToken = fromToken;
@@ -40,14 +67,28 @@ export const SwapWidget = () => {
   };
 
   const handleConnectWallet = () => {
-    setIsConnected(true);
+    const connector = connectors.find(c => c.name === 'MetaMask') || connectors[0];
+    if (connector) {
+      connect({ connector });
+    }
+  };
+
+  const handleDisconnectWallet = () => {
+    disconnect();
     toast({
-      title: "Wallet Connected",
-      description: "Successfully connected your wallet",
+      title: "Wallet Disconnected",
+      description: "Wallet has been disconnected",
     });
   };
 
   const handleSwap = () => {
+    if (!isConnected) {
+      toast({
+        title: "Wallet not connected",
+        description: "Please connect your wallet first",
+      });
+      return;
+    }
     toast({
       title: "Swap Initiated",
       description: `Swapping ${fromAmount} ${fromToken.symbol} for ${toAmount} ${toToken.symbol}`,
@@ -116,8 +157,10 @@ export const SwapWidget = () => {
           {/* Price Info */}
           <div className="mt-6 p-4 bg-swap-input rounded-lg border border-swap-border">
             <div className="flex justify-between items-center text-sm">
-              <span className="text-swap-text-muted">Price per ETH</span>
-              <span className="text-swap-text">2,450.32 DEXT</span>
+              <span className="text-swap-text-muted">Price per {fromToken.symbol}</span>
+              <span className="text-swap-text">
+                {EXCHANGE_RATES[fromToken.symbol]?.[toToken.symbol]?.toLocaleString() || '1'} {toToken.symbol}
+              </span>
             </div>
           </div>
 
@@ -164,13 +207,24 @@ export const SwapWidget = () => {
                 Connect wallet
               </Button>
             ) : (
-              <Button
-                variant="swap"
-                className="w-full"
-                onClick={handleSwap}
-              >
-                Swap
-              </Button>
+              <div className="space-y-2">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-swap-text-muted">Connected:</span>
+                  <button 
+                    onClick={handleDisconnectWallet}
+                    className="text-swap-accent hover:underline"
+                  >
+                    {address?.slice(0, 6)}...{address?.slice(-4)}
+                  </button>
+                </div>
+                <Button
+                  variant="swap"
+                  className="w-full"
+                  onClick={handleSwap}
+                >
+                  Swap
+                </Button>
+              </div>
             )}
           </div>
         </div>
