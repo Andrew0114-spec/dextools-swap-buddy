@@ -61,6 +61,15 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				swap: {
+					bg: 'hsl(var(--swap-bg))',
+					card: 'hsl(var(--swap-card))',
+					input: 'hsl(var(--swap-input))',
+					accent: 'hsl(var(--swap-accent))',
+					text: 'hsl(var(--swap-text))',
+					'text-muted': 'hsl(var(--swap-text-muted))',
+					border: 'hsl(var(--swap-border))'
 				}
 			},
 			borderRadius: {
