@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowUpDown, Settings, RefreshCw } from 'lucide-react';
+import { ArrowUpDown, Settings, RefreshCw, ChevronDown } from 'lucide-react';
 import { useAccount, useConnect, useDisconnect } from 'wagmi';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { TokenSelector } from './TokenSelector';
 import { SwapInput } from './SwapInput';
 import { SwapSettings } from './SwapSettings';
@@ -30,12 +31,23 @@ const EXCHANGE_RATES: Record<string, Record<string, number>> = {
   USDC: { ETH: 0.0004, DEXT: 0.98, USDT: 1.0 },
 };
 
+const PROVIDERS = [
+  { value: 'kyberswap', label: 'KyberSwap', icon: '🔄' },
+  { value: 'uniswap', label: 'Uniswap', icon: '🦄' },
+  { value: 'okx', label: 'OKX', icon: '🔷' },
+  { value: '1inch', label: '1inch', icon: '🥃' },
+  { value: 'matcha', label: 'Matcha', icon: '🍵' },
+  { value: 'paraswap', label: 'ParaSwap', icon: '📊' },
+  { value: 'openocean', label: 'OpenOcean', icon: '🌊' },
+];
+
 export const SwapWidget = () => {
   const [fromToken, setFromToken] = useState<Token>(MOCK_TOKENS[0]);
   const [toToken, setToToken] = useState<Token>(MOCK_TOKENS[1]);
   const [fromAmount, setFromAmount] = useState('1');
   const [toAmount, setToAmount] = useState('0.0');
   const [showSettings, setShowSettings] = useState(false);
+  const [selectedProvider, setSelectedProvider] = useState('kyberswap');
   const { toast } = useToast();
   
   // Wagmi hooks
@@ -172,10 +184,21 @@ export const SwapWidget = () => {
             </div>
             <div className="flex justify-between items-center text-sm">
               <span className="text-swap-text-muted">Provider</span>
-              <div className="flex items-center gap-2">
-                <span className="text-swap-text">◦ ◦ ◦</span>
-                <span className="text-swap-text">▼</span>
-              </div>
+              <Select value={selectedProvider} onValueChange={setSelectedProvider}>
+                <SelectTrigger className="w-32 h-8 bg-transparent border-none text-swap-text text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-swap-card border-swap-border">
+                  {PROVIDERS.map((provider) => (
+                    <SelectItem key={provider.value} value={provider.value} className="text-swap-text text-xs">
+                      <div className="flex items-center gap-2">
+                        <span>{provider.icon}</span>
+                        <span>{provider.label}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
